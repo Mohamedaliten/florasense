@@ -20,7 +20,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    if (email === 'iot@isimg.tn' && password === '123456789') {
+    if (email === 'plantmonitoring@isimg.tn' && password === '0000') {
       // Simulate API call delay
       setTimeout(() => {
         localStorage.setItem('user', JSON.stringify({ email, name: 'Admin User' }));
@@ -56,7 +56,7 @@ export default function Login() {
               <Input
                 id="email"
                 type="email"
-                placeholder="iot@isimg.tn"
+                placeholder="plantmonitoring@isimg.tn"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -69,7 +69,7 @@ export default function Login() {
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required

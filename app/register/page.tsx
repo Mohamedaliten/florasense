@@ -2,30 +2,82 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { account, databases } from '../server/appwrite';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Leaf } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/use-toast';
+import { ID } from 'appwrite';
 
 export default function Register() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    
-    // Simulate registration
-    setTimeout(() => {
+
+    if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Registration successful",
-        description: "Please login with your credentials",
+        variant: 'destructive',
+        title: 'Password mismatch',
+        description: 'Passwords do not match.',
       });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Create user account
+      const response = await account.create(
+        ID.unique(),
+        formData.email,
+        formData.password,
+        formData.username
+      );
+
+      // Save user data to the database
+      await databases.createDocument(
+        '67582cde2c610f9c8e70', // Replace with your Database ID
+        '67582cedb5f1a0b04238', // Replace with your Collection ID
+        response.$id,
+        {
+          username: formData.username,
+          email: formData.email,
+        }
+      );
+
+      toast({
+        title: 'Registration successful',
+        description: 'Please log in to continue.',
+      });
+
       router.push('/login');
-    }, 1500);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Registration failed',
+        description: error.message || 'An error occurred.',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,65 +89,45 @@ export default function Register() {
             <span className="text-2xl font-bold text-green-800">PlantGuard</span>
           </div>
           <h2 className="text-2xl font-bold text-center">Create an account</h2>
-          <p className="text-gray-500 text-center">Enter your information to get started</p>
+          <p className="text-gray-500 text-center">Enter your details to get started</p>
         </CardHeader>
         <form onSubmit={handleRegister}>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="firstName">
-                  First Name
-                </label>
-                <Input
-                  id="firstName"
-                  placeholder="John"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="lastName">
-                  Last Name
-                </label>
-                <Input
-                  id="lastName"
-                  placeholder="Doe"
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="email">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john@example.com"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="password">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="confirmPassword">
-                Confirm Password
-              </label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                required
-              />
-            </div>
+            <Input
+              id="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              placeholder="Your username"
+              required
+              label="Username"
+            />
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="you@example.com"
+              required
+              label="Email"
+            />
+            <Input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              placeholder="••••••••"
+              required
+              label="Password"
+            />
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              placeholder="••••••••"
+              required
+              label="Confirm Password"
+            />
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button
@@ -103,12 +135,12 @@ export default function Register() {
               className="w-full bg-green-600 hover:bg-green-700"
               disabled={loading}
             >
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? 'Registering...' : 'Sign up'}
             </Button>
             <p className="text-sm text-center text-gray-500">
               Already have an account?{' '}
               <Link href="/login" className="text-green-600 hover:underline">
-                Sign in
+                Log in
               </Link>
             </p>
           </CardFooter>
